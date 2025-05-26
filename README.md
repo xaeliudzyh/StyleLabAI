@@ -31,12 +31,12 @@ StyleLab is a cloud-based application that suggests best hairstyles based on use
 
 3. **Run inference service**
    ```bash
-   uvicorn ml_service.main:app --reload --port 9000
+   uvicorn ml_service.main:app --reload --host 0.0.0.0 --port 9000
    ```
 
 4. **Run main API**
    ```bash
-   uvicorn app.main:app --reload --port 8000
+   uvicorn app.main:app --reload --host 0.0.0.0 --port 8000
    ```
 
 5. **Test recommendation**
