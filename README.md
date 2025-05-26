@@ -66,7 +66,7 @@ StyleLab/
 ```
 
 ---
-## Work is not done. Still in progress...
+## Work is not done yet. Still in progress...
 
 ---
 *© 2025 StyleLab*
