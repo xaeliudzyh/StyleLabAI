@@ -1,0 +1,3 @@
+(venv) PS C:\Users\tsago\PycharmProjects\hairstyle-recommender\ml_service> python test_infer.py
+Status: 200
+Response: {"predictions":[{"style":"Андеркат","prob":0.7992200255393982},{"style":"Шторки","prob":0.10711005330085754},{"style":"Шэг","prob":0.025865992531180382}]}
