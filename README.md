@@ -1,6 +1,6 @@
 # StyleLab: AI-powered Hairstyle Recommendations
 
-StyleLab is a cloud-based application that suggests the top 3 hairstyles based on user profile data using our custom PyTorch model **StyleNet**.
+StyleLab is a cloud-based application that suggests best hairstyles based on user profile data using our custom PyTorch model **StyleNet**.
 
 ---
 
