@@ -1,6 +1,6 @@
 from fastapi import FastAPI, HTTPException
 from pydantic import BaseModel
-from infer import predict_top3
+from ml_service.infer import predict_top3
 from pydantic import BaseModel, Field
 
 class Features(BaseModel):
