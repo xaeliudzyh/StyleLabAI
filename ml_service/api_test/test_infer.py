@@ -1,8 +1,11 @@
 import json
+from pathlib import Path
+
 import requests
 
 # 1) Загрузим JSON из sample.json
-with open("sample.json", encoding="utf-8") as f:
+SAMPLE = Path(__file__).with_suffix('.json')  # sample.json лежит рядом с тестом
+with open(SAMPLE, encoding="utf-8") as f:
     data = json.load(f)
 
 # 2) Пошлём запрос на /infer
