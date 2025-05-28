@@ -1,14 +1,14 @@
-import json
-from pathlib import Path
+from ml_service.main import app
+from fastapi.testclient import TestClient
+import json, pathlib
 
-import requests
+SAMPLE = pathlib.Path(__file__).with_suffix('.json')
+data = json.loads(SAMPLE.read_text(encoding="utf-8"))
 
-# 1) Загрузим JSON из sample.json
-SAMPLE = Path(__file__).with_suffix('.json')  # sample.json лежит рядом с тестом
-with open(SAMPLE, encoding="utf-8") as f:
-    data = json.load(f)
+client = TestClient(app)
 
-# 2) Пошлём запрос на /infer
-resp = requests.post("http://127.0.0.1:9000/infer", json=data)
-print("Status:", resp.status_code)
-print("Response:", resp.text)
+def test_infer():
+    r = client.post("/infer", json=data)
+    assert r.status_code == 200
+    assert "predictions" in r.json()
+    assert len(r.json()["predictions"]) == 3
