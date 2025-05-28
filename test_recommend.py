@@ -1,10 +1,16 @@
-import json, requests
+from fastapi.testclient import TestClient
+from app.main import app
+import json, pathlib
 
-# берём sample.json из ml_service
-with open("ml_service/api_test/sample.json", encoding="utf-8") as f:
-    data = json.load(f)
-data["client_id"] = 1
-data["top_k"] = 3
+client = TestClient(app)
 
-r = requests.post("http://127.0.0.1:8000/recommend", json=data)
-print(r.status_code, r.json())
+DATA = {
+    # тот же словарь анкеты
+    "client_id": 1,
+    "top_k": 3
+}
+
+def test_recommend():
+    r = client.post("/recommend", json=DATA)
+    assert r.status_code == 200
+    assert len(r.json()["recommendations"]) == 3
