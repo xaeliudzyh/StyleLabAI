@@ -35,26 +35,39 @@ n_classes = len(joblib.load(ART_DIR / "label_encoder.joblib").classes_)
 cards      = checkpoint.get("cardinalities", [len(c) for c in ord_enc.categories_])
 
 # ——— модель ———
+import torch
+import torch.nn as nn
+
 class StyleNet(nn.Module):
-    def __init__(self, cards, n_cls, emb_dim=10):
+    def __init__(self, cards, n_cls, emb_dim: int = 10):
         super().__init__()
-        self.em = nn.ModuleList(
-            [nn.Embedding(c+1, min(emb_dim, (c+1)//2)) for c in cards]
-        )
-        h = sum(e.embedding_dim for e in self.em)
+        self.embs = nn.ModuleList([
+            nn.Embedding(card + 1, min(emb_dim, (card + 1) // 2))
+            for card in cards
+        ])
+        h = sum(e.embedding_dim for e in self.embs)
+        self.layer_norm = nn.LayerNorm(h)
+        self.dropout1   = nn.Dropout(p=0.30)
+        self.fc1  = nn.Linear(h, 128)
+        self.act1 = nn.ReLU()
+        self.fc2  = nn.Linear(128, 256)
+        self.act2 = nn.ReLU()
+        self.dropout2 = nn.Dropout(p=0.30)
+        self.fc_out = nn.Linear(256, n_cls)
 
-        self.net = nn.Sequential(
-            nn.LayerNorm(h),
-            nn.Dropout(0.30),
-            nn.Linear(h, 128), nn.ReLU(),
-            nn.Linear(128, 256), nn.ReLU(),
-            nn.Dropout(0.30),
-            nn.Linear(256, n_cls)
-        )
+    def forward(self, x: torch.Tensor) -> torch.Tensor:
+        embs = [emb(x[:, i]) for i, emb in enumerate(self.embs)]
+        x = torch.cat(embs, dim=1)
+        x = self.layer_norm(x)
+        x = self.dropout1(x)
+        x = self.fc1(x)
+        x = self.act1(x)
+        x = self.fc2(x)
+        x = self.act2(x)
+        x = self.dropout2(x)
+        x = self.fc_out(x)
+        return x
 
-    def forward(self, x):
-        x = torch.cat([e(x[:, i]) for i, e in enumerate(self.em)], 1)
-        return self.net(x)
 
 model = StyleNet(cards, n_classes)
 model.load_state_dict(state_dict)

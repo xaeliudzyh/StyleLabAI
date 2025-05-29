@@ -2,6 +2,8 @@ import httpx
 from fastapi import FastAPI, Depends, HTTPException
 from sqlalchemy.orm import Session
 from pydantic import BaseModel, Field
+
+from ml_service.infer import predict_top3
 from ml_service.main import Features
 from .db import SessionLocal
 from . import crud, schemas
@@ -45,14 +47,17 @@ class RecommendRequest(Features):
     client_id: int = Field(..., alias="client_id")
     top_k:      int = 3
 
+app = FastAPI()
+
 @app.post("/recommend")
 async def recommend(req: RecommendRequest):
-    # 1) Собираем payload в виде словаря по alias
     payload = req.dict(by_alias=True, exclude_none=True)
-    # 2) Отправляем на локальный ML-сервис
-    async with httpx.AsyncClient() as client:
-        r = await client.post("http://127.0.0.1:9000/infer", json=payload)
-    if r.status_code != 200:
-        raise HTTPException(r.status_code, detail=f"ML error: {r.text}")
-    preds = r.json()["predictions"]
+    try:
+        async with httpx.AsyncClient() as client:
+            r = await client.post("http://127.0.0.1:9000/infer", json=payload)
+            r.raise_for_status()
+            preds = r.json().get("predictions", [])
+    except (httpx.HTTPError, httpx.ConnectError):
+        # если ML-сервис не доступен (в CI), делаем локально
+        preds = predict_top3(payload)
     return {"recommendations": preds}
