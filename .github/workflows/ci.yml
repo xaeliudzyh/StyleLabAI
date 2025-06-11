@@ -67,3 +67,17 @@ jobs:
         tags: |
           cr.yandex/${{ env.REGISTRY }}/style-ml:${{ github.sha }}
           cr.yandex/${{ env.REGISTRY }}/style-ml:latest
+
+    - name: Terraform apply
+      uses: hashicorp/setup-terraform@v3
+      with:
+        terraform_version: 1.6.x
+
+    - run: |
+        cd iac/terraform
+        terraform init -input=false
+        terraform apply -auto-approve \
+          -var "yc_token=${{ secrets.YC_IAM_TOKEN }}" \
+          -var "cloud_id=${{ secrets.YC_CLOUD_ID }}" \
+          -var "folder_id=${{ secrets.YC_FOLDER_ID }}" \
+          -var "registry=${{ secrets.YC_CR_REGISTRY }}"
