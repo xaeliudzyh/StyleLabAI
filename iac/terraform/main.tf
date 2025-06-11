@@ -16,9 +16,6 @@ provider "yandex" {
   zone      = var.zone
 }
 
-########################################
-# Network + subnet + public IP
-########################################
 resource "yandex_vpc_network" "net" { name = "style-net" }
 
 resource "yandex_vpc_subnet" "subnet" {
@@ -52,10 +49,11 @@ resource "yandex_compute_instance" "vm" {
   }
 
   network_interface {
-    subnet_id      = yandex_vpc_subnet.subnet.id
-    nat            = true
-    nat_ip_address = yandex_vpc_address.ext_ip.external_ipv4_address.address
+    subnet_id  = yandex_vpc_subnet.subnet.id
+    nat        = true
+    nat_ip_address = yandex_vpc_address.ext_ip.external_ipv4_address[0].address
   }
+
 
   metadata = {
     serial-port-enable = 1
