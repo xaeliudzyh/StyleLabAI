@@ -33,15 +33,16 @@ resource "yandex_vpc_address" "ext_ip" {
   external_ipv4_address { zone_id = var.zone }
 }
 
-########################################
-# Compute VM
-########################################
 resource "yandex_compute_instance" "vm" {
   name        = "style-vm"
   platform_id = "standard-v1"
   zone        = var.zone
 
-  resources { cores = 2 memory = 4 }
+  resources {
+    cores  = 2
+    memory = 4
+  }
+
 
   boot_disk {
     initialize_params {
@@ -59,7 +60,6 @@ resource "yandex_compute_instance" "vm" {
   metadata = {
     serial-port-enable = 1
 
-    ################ cloud-init ################
     user-data = <<-CLOUD
       #cloud-config
       package_update: true
@@ -81,7 +81,3 @@ resource "yandex_compute_instance" "vm" {
     CLOUD
   }
 }
-
-########################################
-# Outputs
-########################################
