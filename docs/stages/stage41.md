@@ -1,0 +1,81 @@
+# 4.1 Build & Push Docker Images
+
+## Цель  
+Собрать и отправить в Container Registry два образа:
+
+1. **style-api** – основной FastAPI-бэкенд (порт 8000)  
+2. **style-ml**  – отдельный инференс-сервис с `/infer` (порт 9000)
+
+## Как это реализовано в CI
+
+```yaml
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  test-build-push:
+    runs-on: ubuntu-latest
+
+    env:
+      REGISTRY: ${{ secrets.YC_CR_REGISTRY }}
+
+    steps:
+    # ─── checkout ──────────────────────────────────────────────
+    - uses: actions/checkout@v4
+
+    # ─── set up Python & deps ─────────────────────────────────
+    - uses: actions/setup-python@v5
+      with:
+        python-version: "3.11"
+    - run: |
+        python -m pip install --upgrade pip
+        pip install -r requirements.txt
+        pip install pytest pytest-cov
+    - name: Add project to PYTHONPATH
+      run: echo "PYTHONPATH=$PWD" >> $GITHUB_ENV
+
+    # ─── run tests ────────────────────────────────────────────
+    - name: Run pytest
+      run: |
+        pytest -q --junitxml=test-results.xml
+    - uses: actions/upload-artifact@v4
+      with:
+        name: pytest-report
+        path: test-results.xml
+
+    # ─── set up Docker Buildx ─────────────────────────────────
+    - uses: docker/setup-buildx-action@v3
+
+    # ─── login to Yandex CR ───────────────────────────────────
+    - uses: docker/login-action@v3
+      with:
+        registry: cr.yandex
+        username: ${{ secrets.YC_CR_USER }}
+        password: ${{ secrets.YC_CR_PASSWORD }}
+
+    # ─── build & push backend ─────────────────────────────────
+    - name: Build & push API image
+      uses: docker/build-push-action@v5
+      with:
+        context: .
+        file: Dockerfile
+        push: true
+        tags: |
+          cr.yandex/${{ env.REGISTRY }}/style-api:${{ github.sha }}
+          cr.yandex/${{ env.REGISTRY }}/style-api:latest
+
+    # ─── build & push ML image ────────────────────────────────
+    - name: Build & push ML image
+      uses: docker/build-push-action@v5
+      with:
+        context: .
+        file: Dockerfile.ml
+        push: true
+        tags: |
+          cr.yandex/${{ env.REGISTRY }}/style-ml:${{ github.sha }}
+          cr.yandex/${{ env.REGISTRY }}/style-ml:latest
+
