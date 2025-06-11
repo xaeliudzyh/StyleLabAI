@@ -9,8 +9,8 @@ resource "yandex_kubernetes_cluster" "cluster" {
   release_channel = "rapid"
 
   master {
-    zonal_master {
-      zone_id   = var.zone
+    location {
+      zone      = var.zone
       subnet_id = yandex_vpc_subnet.subnet.id
     }
     version = "1.27"
