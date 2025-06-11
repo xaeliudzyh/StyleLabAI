@@ -27,6 +27,11 @@ jobs:
     - run: |
         pip install -r requirements.txt pytest pytest-cov
 
+    - run: echo "PYTHONPATH=$PWD" >> $GITHUB_ENV
+
+    - run: |
+        pip install -r requirements.txt pytest pytest-cov
+
     # ─── tests ──────────────────────────────────
     - run: pytest -q --junitxml=test-results.xml
     - uses: actions/upload-artifact@v4
