@@ -3,24 +3,23 @@ data "yandex_compute_image" "ubuntu" {
 }
 
 resource "yandex_kubernetes_cluster" "cluster" {
-  name       = "style-cluster"
-  network_id = yandex_vpc_network.net.id
-  folder_id  = var.folder_id
+  name            = "style-cluster"
+  folder_id       = var.folder_id
+  network_id      = yandex_vpc_network.net.id
   release_channel = "rapid"
 
   master {
     zonal_master {
-      location {
-        zone      = var.zone
-        subnet_id = yandex_vpc_subnet.subnet.id
-      }
+      zone_id   = var.zone
+      subnet_id = yandex_vpc_subnet.subnet.id
     }
     version = "1.27"
   }
 
-  service_account_id        = var.iam_sa_id
-  node_service_account_id   = var.node_sa_id
+  service_account_id      = var.iam_sa_id
+  node_service_account_id = var.node_sa_id
 }
+
 
 resource "yandex_kubernetes_node_group" "nodes" {
   name       = "style-node-group"
