@@ -1,36 +1,64 @@
-module "k8s" {
-  source  = "terraform-yacloud-modules/kubernetes/yandex"
-  version = "1.1.0"
+# iac/terraform/k8s.tf
 
-  # 1. Общие параметры
-  folder_id  = var.folder_id                     # ID вашего каталога
-  network_id = yandex_vpc_network.net.id         # сеть из 4.2
-  master_locations = [
-    {
-      zone      = var.zone                        # ru-central1-a
-      subnet_id = yandex_vpc_subnet.subnet.id
-    }
-  ]
+# ── 1) Используем всегда актуальный Ubuntu 22.04 LTS ──────
+data "yandex_compute_image" "ubuntu" {
+  family = "ubuntu-2204-lts"
+}
 
-  # 2. Сервис-аккаунты
-  service_account_name      = "k8s-master-sa"    # Module создаст SA или можно передать ID
-  node_service_account_name = "k8s-node-sa"      # Если пусто — будет использован тот же SA
-
-  # 3. Версия и канал
-  master_version  = "1.27"
+# ── 2) Managed Kubernetes Cluster ─────────────────────────
+resource "yandex_kubernetes_cluster" "cluster" {
+  name            = "style-cluster"
+  folder_id       = var.folder_id
+  network_id      = yandex_vpc_network.net.id
   release_channel = "rapid"
 
-  # 4. Нод-группы
-  node_groups = {
-    default = {
-      cores       = 2
-      memory      = 4
-      auto_scale = {
-        min     = 2
-        max     = 5
-        initial = 2
-      }
-      subnet_id   = yandex_vpc_subnet.subnet.id
+  master {
+    zonal {
+      zone      = var.zone
+      subnet_id = yandex_vpc_subnet.subnet.id
+    }
+    version = "1.27"
+  }
+
+  # SA для control-plane и для воркеров
+  service_account_id      = var.iam_sa_id
+  node_service_account_id = var.node_sa_id
+}
+# :contentReference[oaicite:0]{index=0}
+
+# ── 3) Node Group (воркеры) ───────────────────────────────
+resource "yandex_kubernetes_node_group" "nodes" {
+  cluster_id = yandex_kubernetes_cluster.cluster.id
+  version    = yandex_kubernetes_cluster.cluster.master[0].version
+
+  instance_template {
+    platform_id = "standard-v1"
+    nat         = true
+    resources {
+      cores  = 2
+      memory = 4
+    }
+    boot_disk {
+      size = 20
+      type = "network-hdd"
+    }
+    scheduling_policy {
+      preemptible = false
+    }
+  }
+
+  # при старте всегда 2 ноды; автоскейл будет через HPA
+  scale_policy {
+    fixed_scale {
+      size = 2
+    }
+  }
+
+  allocation_policy {
+    location {
+      zone      = var.zone
+      subnet_id = yandex_vpc_subnet.subnet.id
     }
   }
 }
+# :contentReference[oaicite:1]{index=1}
