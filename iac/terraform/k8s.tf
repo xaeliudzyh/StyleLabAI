@@ -1,53 +1,36 @@
-data "yandex_compute_image" "ubuntu" {
-  family = "ubuntu-2204-lts"
-}
+module "k8s" {
+  source  = "terraform-yacloud-modules/kubernetes/yandex"
+  version = "1.1.0"
 
-resource "yandex_kubernetes_cluster" "cluster" {
-  name            = "style-cluster"
-  folder_id       = var.folder_id
-  network_id      = yandex_vpc_network.net.id
-  release_channel = "rapid"
-
-  master {
-    zonal {
-      zone      = var.zone
+  # 1. Общие параметры
+  folder_id  = var.folder_id                     # ID вашего каталога
+  network_id = yandex_vpc_network.net.id         # сеть из 4.2
+  master_locations = [
+    {
+      zone      = var.zone                        # ru-central1-a
       subnet_id = yandex_vpc_subnet.subnet.id
     }
-    version = "1.27"
-  }
+  ]
 
-  service_account_id      = var.iam_sa_id
-  node_service_account_id = var.node_sa_id
-}
+  # 2. Сервис-аккаунты
+  service_account_name      = "k8s-master-sa"    # Module создаст SA или можно передать ID
+  node_service_account_name = "k8s-node-sa"      # Если пусто — будет использован тот же SA
 
+  # 3. Версия и канал
+  master_version  = "1.27"
+  release_channel = "rapid"
 
-resource "yandex_kubernetes_node_group" "nodes" {
-  name       = "style-node-group"
-  cluster_id = yandex_kubernetes_cluster.cluster.id
-  folder_id  = var.folder_id
-
-  node_service_account_id = var.node_sa_id
-  subnet_id               = yandex_vpc_subnet.subnet.id
-  version                 = yandex_kubernetes_cluster.cluster.master[0].version
-
-  scale_policy {
-    auto_scale {
-      min_replicas = 2
-      max_replicas = 5
-    }
-  }
-
-  instance_template {
-    platform_id = "standard-v1"
-    resources {
-      cores  = 2
-      memory = 4
-    }
-    boot_disk {
-      initialize_params {
-        image_id = data.yandex_compute_image.ubuntu.id
-        size     = 20
+  # 4. Нод-группы
+  node_groups = {
+    default = {
+      cores       = 2
+      memory      = 4
+      auto_scale = {
+        min     = 2
+        max     = 5
+        initial = 2
       }
+      subnet_id   = yandex_vpc_subnet.subnet.id
     }
   }
 }
