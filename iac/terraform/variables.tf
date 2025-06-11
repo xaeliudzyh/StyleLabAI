@@ -10,3 +10,11 @@ variable "folder_id"  { type = string }
 variable "registry" {
   type = string
 }
+
+variable "iam_sa_id" {
+  type = string
+}
+
+variable "node_sa_id" {
+  type = string
+}
