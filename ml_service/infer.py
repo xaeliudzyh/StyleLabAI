@@ -35,6 +35,9 @@ n_classes = len(joblib.load(ART_DIR / "label_encoder.joblib").classes_)
 cards      = checkpoint.get("cardinalities", [len(c) for c in ord_enc.categories_])
 
 # ——— модель ———
+import torch
+import torch.nn as nn
+
 class StyleNet(nn.Module):
     def __init__(self, cards, n_cls, emb_dim=10):
         super().__init__()
@@ -55,6 +58,7 @@ class StyleNet(nn.Module):
     def forward(self, x):
         x = torch.cat([e(x[:, i]) for i, e in enumerate(self.em)], 1)
         return self.net(x)
+
 
 model = StyleNet(cards, n_classes)
 model.load_state_dict(state_dict)

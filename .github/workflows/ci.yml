@@ -1,0 +1,81 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  test:
+    name: 🧪 Run tests
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Add project to PYTHONPATH
+        run: echo "PYTHONPATH=${{ github.workspace }}" >> $GITHUB_ENV
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - uses: actions/cache@v4
+        with:
+          path: ~/.cache/pip
+          key: ${{ runner.os }}-pip-${{ hashFiles('requirements.txt') }}
+
+      - run: |
+          pip install -r requirements.txt pytest pytest-cov
+
+      - run: pytest -q --junitxml=test-results.xml
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: pytest-report
+          path: test-results.xml
+
+
+  build-and-push:
+    name: Build & Push Docker images
+    runs-on: ubuntu-latest
+    needs: test
+    env:
+      REGISTRY: ${{ secrets.YC_CR_REGISTRY }}
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: docker/setup-buildx-action@v3
+
+      - name: Login to Yandex CR
+        uses: docker/login-action@v3
+        with:
+          registry: cr.yandex
+          username: ${{ secrets.YC_CR_USER }}
+          password: ${{ secrets.YC_IAM_TOKEN }}
+
+
+      - name: Build & push style-api
+        uses: docker/build-push-action@v5
+        with:
+          context: .
+          file: Dockerfile
+          push: true
+          tags: |
+            cr.yandex/${{ env.REGISTRY }}/style-api:${{ github.sha }}
+            cr.yandex/${{ env.REGISTRY }}/style-api:latest
+          cache-from: type=gha
+          cache-to:   type=gha,mode=max
+
+      - name: Build & push style-ml
+        uses: docker/build-push-action@v5
+        with:
+          context: .
+          file: Dockerfile.ml
+          push: true
+          tags: |
+            cr.yandex/${{ env.REGISTRY }}/style-ml:${{ github.sha }}
+            cr.yandex/${{ env.REGISTRY }}/style-ml:latest
+          cache-from: type=gha
+          cache-to:   type=gha,mode=max
