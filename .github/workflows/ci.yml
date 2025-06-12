@@ -12,23 +12,29 @@ jobs:
 
     steps:
       - uses: actions/checkout@v4
-      - uses: actions/cache@v4
-        with:
-          path: ~/.cache/pip
-          key: ${{ runner.os }}-pip-${{ hashFiles('requirements.txt') }}
+
+      - name: Add project to PYTHONPATH
+        run: echo "PYTHONPATH=${{ github.workspace }}" >> $GITHUB_ENV
 
       - uses: actions/setup-python@v5
         with:
           python-version: "3.11"
 
+      - uses: actions/cache@v4
+        with:
+          path: ~/.cache/pip
+          key: ${{ runner.os }}-pip-${{ hashFiles('requirements.txt') }}
+
       - run: |
           pip install -r requirements.txt pytest pytest-cov
+
       - run: pytest -q --junitxml=test-results.xml
 
       - uses: actions/upload-artifact@v4
         with:
           name: pytest-report
           path: test-results.xml
+
 
   build-and-push:
     name: Build & Push Docker images
