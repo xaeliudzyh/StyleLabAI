@@ -1,6 +1,3 @@
-########################################
-# Terraform & provider
-########################################
 terraform {
   required_providers {
     yandex = {
@@ -34,6 +31,7 @@ resource "yandex_compute_instance" "vm" {
   name        = "style-vm"
   platform_id = "standard-v1"
   zone        = var.zone
+  folder_id  = var.folder_id
 
   resources {
     cores  = 2
@@ -56,27 +54,28 @@ resource "yandex_compute_instance" "vm" {
   }
 
 
-  metadata = {
-    serial-port-enable = 1
+    metadata = {
+    serial-port-enable = "1"
 
-    user-data = <<-CLOUD
+    user-data = <<-EOF
       #cloud-config
       package_update: true
-      packages: [docker.io]
+      packages:
+        - docker.io
 
-      ## добавляем ubuntu в группу docker
       runcmd:
-        - usermod -aG docker ubuntu
+        - systemctl enable docker
+        - systemctl start docker
 
-        # логинимся в Container Registry
         - docker login cr.yandex -u iam -p ${var.yc_token}
 
-        # тянем последний образ
         - docker pull cr.yandex/${var.registry}/style-api:latest
-
-        # запускаем контейнер и пробрасываем порт 80 → 8000
-        - docker run -d --restart unless-stopped -p 80:8000 --name style-api \
+        - docker run -d \
+            --restart unless-stopped \
+            -p 80:8000 \
+            --name style-api \
             cr.yandex/${var.registry}/style-api:latest
-    CLOUD
+    EOF
   }
+
 }
