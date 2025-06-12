@@ -55,6 +55,7 @@ jobs:
           username: ${{ secrets.YC_CR_USER }}
           password: ${{ secrets.YC_IAM_TOKEN }}
 
+
       - name: Build & push style-api
         uses: docker/build-push-action@v5
         with:
