@@ -53,7 +53,7 @@ jobs:
         with:
           registry: cr.yandex
           username: ${{ secrets.YC_CR_USER }}
-          password: ${{ secrets.YC_CR_PASSWORD }}
+          password: ${{ secrets.YC_IAM_TOKEN }}
 
       - name: Build & push style-api
         uses: docker/build-push-action@v5
