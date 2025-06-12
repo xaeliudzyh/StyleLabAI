@@ -79,31 +79,3 @@ jobs:
             cr.yandex/${{ env.REGISTRY }}/style-ml:latest
           cache-from: type=gha
           cache-to:   type=gha,mode=max
-
-  deploy-infra:
-    name: Terraform apply
-    runs-on: ubuntu-latest
-    needs: build-and-push
-
-    steps:
-      - uses: actions/checkout@v4
-
-      - uses: actions/cache@v4
-        with:
-          path: iac/terraform/.terraform
-          key: ${{ runner.os }}-tf-${{ hashFiles('iac/terraform/*.tf') }}
-
-      - uses: hashicorp/setup-terraform@v3
-        with:
-          terraform_version: 1.6.x
-
-      - run: |
-          cd iac/terraform
-          terraform init -input=false
-          terraform apply -auto-approve \
-            -var "yc_token=${{ secrets.YC_IAM_TOKEN }}" \
-            -var "cloud_id=${{ secrets.YC_CLOUD_ID }}" \
-            -var "folder_id=${{ secrets.YC_FOLDER_ID }}" \
-            -var "registry=${{ secrets.YC_CR_REGISTRY }}" \
-            -var "iam_sa_id=${{ secrets.IAM_SA_ID }}" \
-            -var "node_sa_id=${{ secrets.NODE_SA_ID }}"
