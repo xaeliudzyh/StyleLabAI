@@ -1,8 +1,10 @@
 from fastapi import FastAPI, HTTPException
-from pydantic import BaseModel
-from ml_service.infer import predict_top3
 from pydantic import BaseModel, Field
+import joblib, torch
+import torch.nn.functional as F
+from ml_service.infer import predict_top3
 
+# Схема входа для /infer
 class Features(BaseModel):
     Возраст: str
     Форма_Лица: str = Field(..., alias="Форма Лица")
@@ -19,12 +21,17 @@ class Features(BaseModel):
     Тип_укладки: str = Field(..., alias="Тип укладки")
     Использование_фена: str = Field(..., alias="Использование фена")
 
-app = FastAPI(title="StyleNet inference")
+    class Config:
+        allow_population_by_field_name = True
+        extra = "ignore"
+
+app = FastAPI(title="StyleNet Inference")
 
 @app.post("/infer")
 def infer(features: Features):
     try:
-        result = predict_top3(features.dict(by_alias=True))
+        # используем нашу функцию infer.py
+        result = predict_top3(features.model_dump(by_alias=True))
         return {"predictions": result}
     except Exception as e:
-        raise HTTPException(400, detail=str(e))
+        raise HTTPException(status_code=500, detail=str(e))

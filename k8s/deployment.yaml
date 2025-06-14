@@ -1,0 +1,36 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: style-api
+  namespace: style
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: style-api
+  template:
+    metadata:
+      labels:
+        app: style-api
+    spec:
+      containers:
+        - name: api
+          image: cr.yandex/crp1tis4c8hchmo7qb07/style-api:latest
+          ports:
+            - containerPort: 8000
+          resources:
+            requests:
+              cpu: 100m
+              memory: 128Mi
+            limits:
+              cpu: 500m
+              memory: 512Mi
+          readinessProbe:
+            httpGet:
+              path: /health
+              port: 8000
+            initialDelaySeconds: 5
+            periodSeconds: 10
+          env:
+            - name: PYTHONPATH
+              value: /code

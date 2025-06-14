@@ -1,0 +1,12 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: style-api
+  namespace: style
+spec:
+  type: LoadBalancer
+  selector:
+    app: style-api
+  ports:
+    - port: 80
+      targetPort: 8000
