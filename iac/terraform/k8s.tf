@@ -6,16 +6,15 @@ resource "yandex_kubernetes_cluster" "cluster" {
   name            = "style-cluster"
   folder_id       = var.folder_id
   network_id      = yandex_vpc_network.net.id
-  release_channel = "rapid"
+  release_channel = "RAPID"
 
   master {
     zonal {
       zone      = var.zone
       subnet_id = yandex_vpc_subnet.subnet.id
     }
-    version = "1.27"
+    public_ip = true
   }
-
   service_account_id      = var.iam_sa_id
   node_service_account_id = var.node_sa_id
 }
@@ -41,6 +40,11 @@ resource "yandex_kubernetes_node_group" "nodes" {
   instance_template {
     platform_id = "standard-v1"
 
+    network_interface {
+      subnet_ids = [ yandex_vpc_subnet.subnet.id ]
+      nat        = true
+    }
+
     resources {
       cores  = 2
       memory = 4
@@ -56,4 +60,5 @@ resource "yandex_kubernetes_node_group" "nodes" {
     }
   }
 }
+
 
